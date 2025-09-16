@@ -51,6 +51,9 @@ void CircleSquare(Circle &circle){
 // квадрат
 struct Square{
     Dot topl_corner;
+    Dot topr_corner;
+    Dot lowl_corner;
+    Dot lowr_corner;
     double side;
     double perimeter;
     double square;
@@ -61,6 +64,12 @@ void SquareInit(Square &square){
     DotInit(square.topl_corner);
     std::cout << "Write side len " << std::endl;
     std::cin >> square.side;
+    square.topr_corner.x = square.topl_corner.x + square.side;
+    square.topr_corner.y = square.topl_corner.y;
+    square.lowl_corner.x = square.topl_corner.x;
+    square.lowl_corner.y = square.topl_corner.y - square.side;
+    square.lowr_corner.x = square.topl_corner.x + square.side;
+    square.lowr_corner.y = square.topl_corner.y - square.side;;
 }
 
 void SquareShow(Square &square){
@@ -78,42 +87,121 @@ void SquareSquare(Square &square){
 }
 
 // принадлежность точки фигуре
-void DonInCircle(Circle &circle, Dot &dot){
+bool DonInCircle(Circle &circle, Dot &dot){
     if (abs(dot.x - circle.center.x) < circle.radius && abs(dot.y - circle.center.y) < circle.radius){
-        std::cout << "Dot in circle" << std::endl;
-    } else {
-        std::cout << "Dot not in circle" << std::endl;
+        return 1;
     }
+    return 0;
 }
 
-void DotInSquare(Square &square, Dot &dot){
-    if (dot.x > square.topl_corner.x && dot.x < (square.topl_corner.x + square.side) && dot.y < square.topl_corner.y && dot.y > (square.topl_corner.y - square.side)){
-        std::cout << "Dot in square" << std::endl;
+bool DotInSquare(Square &square, Dot &dot){
+    if (dot.x > square.topl_corner.x && dot.x < (square.topl_corner.x + square.side) && 
+    dot.y < square.topl_corner.y && dot.y > (square.topl_corner.y - square.side)){
+        return 1;
     } else {
-        std::cout << "Dot not in square" << std::endl;
+        return 0;
     }
 }
 
 // нахождение точки на контуре
-void DotOnCircle(Circle &circle, Dot &dot){
+bool DotOnCircle(Circle &circle, Dot &dot){
     if ((dot.x - circle.center.x) * (dot.x - circle.center.x) + (dot.y - circle.center.y) * (dot.y - circle.center.y) == circle.radius * circle.radius){
-        std::cout << "Dot on circle" << std::endl;
+        return 1;
     } else {
-        std::cout << "Dot not on circle" << std::endl;
+        return 0;
     }
 }
 
-void DotOnSquare(Square &square, Dot &dot){
-     if ((dot.x == square.topl_corner.x || dot.x == square.topl_corner.x + square.side) && (dot.y == square.topl_corner.y || dot.y > square.topl_corner.y - square.side)){
-        std::cout << "Dot on square" << std::endl;
+bool DotOnSquare(Square &square, Dot &dot){
+     if ((dot.x == square.topl_corner.x || dot.x == square.topl_corner.x + square.side) && 
+     (dot.y == square.topl_corner.y || dot.y > square.topl_corner.y - square.side)){
+        return 1;
     } else {
-        std::cout << "Dot not on square" << std::endl;
+        return 0;
     }
 }
 
 // пересечение фигур
+bool CirclesIntersection(Circle &a, Circle &b){
+    double dcenter = sqrt((a.center.x - b.center.x)*(a.center.x - b.center.x) + (a.center.y - b.center.y)*(a.center.y - b.center.y));
+    if (a.len > b.len){
+        if ((dcenter < b.radius) && dcenter > a.radius - b.radius){
+            return 1;
+        }
+    } else {
+        if ((dcenter < a.radius) && dcenter > b.radius - a.radius){
+            return 1;
+        }
+        return 0;
+    }
+}
 
+bool SquaresIntersection(Square &a, Square &b){
+    if ((DotInSquare(a,b.topl_corner) && !DotInSquare(a, b.lowr_corner)) || (DotInSquare(b, a.topl_corner) && !DotInSquare(b, a.lowr_corner))){
+        return 1;
+    } else if ((DotInSquare(a, b.topr_corner) && !DotInSquare(a, b.lowl_corner)) || (DotInSquare(b, a.topr_corner) && !DotInSquare(b, a.lowl_corner))){
+        return 1;
+    }
+    return 0;
+}
 
+bool SquareCircleIntersection(Square &a, Circle &b){
+    if ((b.center.x + b.radius >= a.topl_corner.x || b.center.x - b.radius <= a.topr_corner.x) && 
+    (b.center.y + b.radius <= a.lowl_corner.y || b.center.y - b.radius <= a.topr_corner.y)){
+        if (b.center.x*b.center.x - (a.topl_corner.x - b.center.y)*(a.topl_corner.x - b.center.y) + b.radius*b.radius == 0 
+        || b.center.x*b.center.x - (a.topr_corner.x - b.center.y)*(a.topr_corner.x - b.center.y) + b.radius*b.radius == 0){
+            return 1;
+        }
+        if (b.center.y*b.center.y - (a.topl_corner.y - b.center.x)*(a.lowl_corner.y - b.center.x) + b.radius*b.radius == 0 
+        || b.center.y*b.center.y - (a.topl_corner.y - b.center.x)*(a.lowl_corner.y - b.center.x) + b.radius*b.radius == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// принадлежность фигуры
+bool IsCircleInCircle(Circle &a, Circle &b){
+    if(DonInCircle(b, a.center) && !CirclesIntersection(a,b)){
+        return 1;
+    }
+    return 0;
+}
+
+bool IsSquareInSquare(Square &a, Square &b){
+    if (DotInSquare(b,a.topl_corner) && DotInSquare(b,a.lowr_corner)){
+        return 1;
+    }
+    return 0;
+}
+
+bool IsSquareInCircle(Square &a, Circle &b){
+    Circle *pcircle;
+    pcircle = new Circle;
+    pcircle->center.x = a.topl_corner.x + a.side/2;
+    pcircle->center.y = a.topl_corner.y - a.side/2;
+    if (IsCircleInCircle(*pcircle,b)){
+        delete pcircle;
+        return 1;
+    }
+    delete pcircle;
+    return 0;
+}
+
+bool IsCircleInSquare(Circle &a, Square &b){
+    Square *psquare;
+    psquare = new Square;
+    psquare->topl_corner.x = a.center.x - a.radius/2;
+    psquare->topl_corner.y = a.center.y + a.radius/2;
+    psquare->lowr_corner.x = a.center.x + a.radius/2;
+    psquare->lowr_corner.y = a.center.y - a.radius/2;
+    if (IsSquareInSquare(*psquare, b)){
+        delete psquare;
+        return 1;
+    }
+    delete psquare;
+    return 0;
+}
 int main(){
     return 0;
 }
